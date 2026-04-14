@@ -1,46 +1,62 @@
-from food import Food
+"""
+Script de commande pour récupérer les informations nutritionnelles.
+
+Ce script utilise la classe Food pour extraire des données depuis Infocalories
+via des arguments en ligne de commande.
+"""
+
 import argparse
 import sys
-import pylint
-# On affiche un petit message de démarrage
-print("--- Analyseur Nutritionnel ---")
+from food import Food
 
-# 1. Configuration de l'argparse
-parser = argparse.ArgumentParser(description="Récupère les infos d'un aliment sur Infocalories")
-# Le default est à None pour forcer l'utilisateur à saisir un aliment
-parser.add_argument('-f', '--food', help="Nom de l'aliment (ex: 'riz cru')", default=None)
 
-# 2. Extraction du nom de l'aliment
-args = parser.parse_args()
-target = args.food
+def main() -> None:
+    """
+    Fonction principale gérant les arguments et l'exécution du programme.
+    """
+    # Configuration de l'analyseur d'arguments
+    parser = argparse.ArgumentParser(
+        description="Récupère les informations nutritionnelles d'un aliment."
+    )
+    parser.add_argument(
+        '-f', '--food',
+        help="Nom de l'aliment à rechercher (ex: 'riz cru')",
+        default=None
+    )
 
-# 3. Sécurité : si rien n'est saisi, on arrête le script proprement
-if target is None:
-    print("Erreur : Aucun aliment précisé.")
-    print("Utilisation : python get_food.py -f \"nom de l'aliment\"")
-    sys.exit(1)
+    args = parser.parse_args()
+    food_name = args.food
 
-# 4. Création de l'objet Food (le moteur)
-my_food = Food()
+    # Vérification de la présence d'un argument
+    if food_name is None:
+        print("Erreur : Aucun aliment précisé. Utilisez -f.")
+        sys.exit(1)
 
-try:
-    # Récupération des données sur le site
-    print(f"Connexion à Infocalories pour : {target}...")
-    my_food.retrieve_food_infos(target)
-    
-    # Affichage du tableau de bord (ordre de l'image : Cal, Prot, Glu, Lip)
-    my_food.display_food_infos()
+    print(f"--- Analyse en cours pour : {food_name} ---")
 
-    # Petit bonus : on utilise la méthode is_fat qu'on a testée tout à l'heure
-    if my_food.is_fat():
-        print("⚠️ Attention : Cet aliment est riche en lipides (> 20g) !")
-    else:
-        print("✅ Cet aliment est raisonnable en lipides.")
+    # Utilisation du moteur Food
+    my_food = Food()
 
-    # Sauvegarde automatique dans ton historique
-    my_food.save_to_csv_file("historique_aliments.csv")
-    print("\nDonnées sauvegardées dans 'historique_aliments.csv'")
+    try:
+        # Récupération et affichage
+        my_food.retrieve_food_infos(food_name)
+        my_food.display_food_infos()
 
-except Exception as e:
-    print(f"Désolé, une erreur est survenue : {e}")
-    sys.exit(1)
+        # Utilisation de la logique métier (is_fat)
+        if my_food.is_fat():
+            print("⚠️ Cet aliment est riche en lipides (> 20g).")
+        else:
+            print("✅ Taux de lipides raisonnable.")
+
+        # Sauvegarde
+        output_file = "historique_aliments.csv"
+        my_food.save_to_csv_file(output_file)
+        print(f"Résultats ajoutés à {output_file}")
+
+    except Exception as error:  # pylint: disable=broad-except
+        print(f"Une erreur est survenue lors de l'analyse : {error}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
